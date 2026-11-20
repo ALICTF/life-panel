@@ -252,11 +252,6 @@ textarea::placeholder {
 :root[data-skin='hana'] {
   --deco: ' 🎀';
 }
-/* پس‌زمینهٔ خال‌خالی ریز */
-:root[data-skin='hana'] body {
-  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.3px);
-  background-size: 22px 22px;
-}
 :root[data-skin='hana'] .card {
   border-radius: 28px;
   box-shadow: 0 0 0 1.5px var(--line), 0 8px 22px -12px rgb(236 72 153 / 0.35);

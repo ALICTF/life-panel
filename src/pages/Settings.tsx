@@ -41,7 +41,7 @@ export default function Settings() {
                 onClick={() => setSkin(k.id)}
                 className={`press overflow-hidden rounded-2xl text-start ring-2 transition-shadow ${skin === k.id ? 'ring-accent' : 'ring-line'}`}
               >
-                <div className="relative h-20 p-2.5" style={{ background: k.swatch[0], backgroundImage: k.id === 'hana' ? `radial-gradient(${k.swatch[2]} 1.5px, transparent 1.6px)` : undefined, backgroundSize: '12px 12px' }}>
+                <div className="relative h-20 p-2.5" style={{ background: k.swatch[0] }}>
                   <div className="h-2.5 w-14 rounded-full" style={{ background: k.id === 'hana' ? `linear-gradient(90deg, ${k.swatch[1]}, #c084fc)` : k.swatch[3], opacity: k.id === 'hana' ? 1 : 0.85 }} />
                   <div className="mt-2 flex gap-1.5">
                     <div className="h-8 flex-1 shadow-sm" style={{ background: '#fff', borderRadius: k.id === 'mono' ? 4 : k.id === 'hana' ? 14 : 10, boxShadow: k.id === 'hana' ? `0 0 0 1px ${k.swatch[2]}` : undefined }} />
