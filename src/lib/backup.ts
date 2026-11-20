@@ -85,15 +85,20 @@ export async function exportForAnalysis() {
   const txs = await db.transactions.toArray()
 
   // خلاصهٔ هفتگی
-  const weeks = new Map<string, { tasksPlanned: number; tasksDone: number; postponed: number; expense: number; impulse: number; weights: number[]; pai: number; moods: number[]; sleeps: number[]; slips: number; goodDone: number }>()
+  const today = todayKey()
+  const weeks = new Map<string, { tasksPlanned: number; tasksDone: number; tasksDropped: number; postponed: number; expense: number; impulse: number; weights: number[]; pai: number; moods: number[]; sleeps: number[]; slips: number; goodDone: number }>()
   const W = (k: string) => {
     const w = weekStart(k)
-    if (!weeks.has(w)) weeks.set(w, { tasksPlanned: 0, tasksDone: 0, postponed: 0, expense: 0, impulse: 0, weights: [], pai: 0, moods: [], sleeps: [], slips: 0, goodDone: 0 })
+    if (!weeks.has(w)) weeks.set(w, { tasksPlanned: 0, tasksDone: 0, tasksDropped: 0, postponed: 0, expense: 0, impulse: 0, weights: [], pai: 0, moods: [], sleeps: [], slips: 0, goodDone: 0 })
     return weeks.get(w)!
   }
+  // فقط تسک‌های تا امروز؛ نمونه‌های تکراری آینده هنوز «برنامه» نشده‌اند
   for (const t of tasks) {
-    const w = W(t.originalDate || t.date)
-    w.tasksPlanned++
+    const d = t.recurId ? t.date : t.originalDate || t.date
+    if (d > today) continue
+    const w = W(d)
+    if (t.status === 'dropped') w.tasksDropped++
+    else w.tasksPlanned++
     if (t.status === 'done') w.tasksDone++
     w.postponed += t.postponed
   }
@@ -132,6 +137,7 @@ export async function exportForAnalysis() {
       weekStart: week,
       tasksPlanned: w.tasksPlanned,
       tasksDone: w.tasksDone,
+      tasksDropped: w.tasksDropped,
       taskRate: w.tasksPlanned ? +(w.tasksDone / w.tasksPlanned).toFixed(2) : null,
       postponed: w.postponed,
       expense: w.expense,

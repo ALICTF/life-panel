@@ -36,7 +36,9 @@ export async function ensureRecurringTasks(from: string, to: string) {
         if (!matchesRule(r, k)) continue
         const ex = await db.tasks.where('[recurId+date]').equals([r.id!, k]).first()
         if (ex) continue
-        const t = r.template as Partial<Task>
+        // فیلدهای مخصوص هر نمونه از قالب حذف می‌شوند تا هر نمونه تاریخ برنامه‌ریزی خودش را داشته باشد
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { originalDate, createdAt, postponed, doneAt, ...t } = r.template as Partial<Task>
         await db.tasks.add(newTask({ ...t, id: undefined, date: k, recurId: r.id, status: 'todo', subtasks: (t.subtasks || []).map((s) => ({ ...s, done: false })) }))
       }
     }

@@ -42,6 +42,15 @@ export class PanelDB extends Dexie {
       events: '++id, at, kind',
       settings: 'key',
     })
+    // نسخهٔ ۲: نمونه‌های تسک تکراری تاریخ برنامه‌ریزی قالب را گرفته بودند
+    this.version(2).stores({}).upgrade((tx) =>
+      tx
+        .table('tasks')
+        .toCollection()
+        .modify((t: Task) => {
+          if (t.recurId && !t.postponed) t.originalDate = t.date
+        }),
+    )
   }
 }
 

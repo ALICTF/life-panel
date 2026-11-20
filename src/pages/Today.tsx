@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertCircle, ChevronLeft, ClipboardList, HardDriveDownload, NotebookPen, Plus, ShieldOff, Target } from 'lucide-react'
-import { db, getSetting } from '../db/db'
-import type { Task, Transaction } from '../db/types'
-import { greeting, jLong, jMonthKey, jMonthRange, relDay, todayKey, tomorrowKey, weekIndex, weekStart } from '../lib/date'
+import { AlertCircle, ChevronLeft, Flag, ClipboardList, HardDriveDownload, NotebookPen, Plus, ShieldOff, Target } from 'lucide-react'
+import { db, getSetting, logEvent } from '../db/db'
+import type { Goal, Task, Transaction } from '../db/types'
+import { clamp01, goalProgress } from '../lib/goals'
+import { addDaysKey, greeting, jLong, jMonthKey, jMonthRange, relDay, todayKey, tomorrowKey, weekIndex, weekStart } from '../lib/date'
 import { fa, num, pct, shortMoney } from '../lib/format'
 import { holidayOf } from '../lib/holidays'
 import { habitStats } from '../lib/habits'
@@ -48,6 +49,7 @@ export default function Today() {
     }
   }, [today])
   const ctx = useGoalCtx()
+  const dueGoals = ctx.goals.filter((g) => g.status === 'active' && ((g.deadline && g.deadline < today) || clamp01(goalProgress(g, ctx)) >= 1))
   const weekGoals = ctx.goals.filter((g) => g.status === 'active' && (g.level === 'week' || g.level === 'month')).slice(0, 4)
   const ref = useStagger<HTMLDivElement>([])
 
@@ -120,6 +122,48 @@ export default function Today() {
             </div>
           </Card>
         )}
+
+        {dueGoals.map((g) => {
+          const reached = clamp01(goalProgress(g, ctx)) >= 1
+          const close = async (status: Goal['status']) => {
+            await db.goals.update(g.id!, { status, updatedAt: Date.now(), history: [...g.history, { at: Date.now(), status }] })
+            await logEvent('goal_status', g.id, { status, auto: true })
+            toast(status === 'done' ? 'تبریک! هدف انجام شد' : 'هدف رها شد')
+          }
+          return (
+            <div key={g.id} className={`rounded-2xl p-4 ${reached ? 'bg-good-soft' : 'bg-warn-soft'}`}>
+              <p className="flex items-center gap-2 text-sm">
+                <Flag size={16} className={reached ? 'text-good' : 'text-warn'} />
+                <span className="min-w-0 flex-1">
+                  {reached ? 'به هدف رسیدی: ' : 'مهلت این هدف تمام شد: '}
+                  <b>{g.title}</b>
+                </span>
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button className="press flex-1 rounded-xl bg-surface py-2 text-sm font-bold" onClick={() => close('done')}>
+                  انجام شد
+                </button>
+                {!reached && (
+                  <button
+                    className="press flex-1 rounded-xl bg-surface py-2 text-sm font-semibold"
+                    onClick={async () => {
+                      const span = { week: 7, month: 30, quarter: 90, year: 365, vision: 365 }[g.level]
+                      await db.goals.update(g.id!, { deadline: addDaysKey(today, span), updatedAt: Date.now() })
+                      toast('مهلت تمدید شد')
+                    }}
+                  >
+                    تمدید
+                  </button>
+                )}
+                {!reached && (
+                  <button className="press rounded-xl px-3 py-2 text-sm text-muted" onClick={() => close('dropped')}>
+                    رها کن
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
 
         {showPlanTomorrow && (
           <Reminder icon={<ClipboardList size={18} />} text="پلنر فردا را هنوز پر نکرده‌ای." action="پر کردن" onClick={() => nav('/planner')} />

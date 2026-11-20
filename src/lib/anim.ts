@@ -58,8 +58,11 @@ export function useCountUp(value: number, duration = 650) {
       ease: 'outQuart',
       onUpdate: () => setShown(o.v),
     })
+    // اگر صفحه در پس‌زمینه باشد انیمیشن اجرا نمی‌شود؛ عدد نهایی در هر حال نمایش داده می‌شود
+    const done = setTimeout(() => setShown(value), duration + 150)
     return () => {
       a.pause()
+      clearTimeout(done)
     }
   }, [value, duration])
   return shown

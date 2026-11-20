@@ -4,7 +4,7 @@ import { Bar, Doughnut } from 'react-chartjs-2'
 import { ArrowLeftRight, ChevronLeft, ChevronRight, CreditCard, HandCoins, PiggyBank, Plus, Search, Scale, Trash2, Wallet } from 'lucide-react'
 import { db, PALETTE } from '../db/db'
 import type { Account, Category, Debt, Transaction } from '../db/types'
-import { jDayMonth, jf, jMonthKey, jMonthLabel, jMonthRange, relDay, shiftMonth, todayKey, nowTime } from '../lib/date'
+import { diffDays, jDayMonth, jf, jMonthKey, jMonthLabel, jMonthRange, relDay, shiftMonth, todayKey, nowTime } from '../lib/date'
 import { fa, num, pct, shortMoney, toman, uid } from '../lib/format'
 import { balances, debtRemaining, rootCat, sumBy } from '../lib/money'
 import { baseOptions, css } from '../lib/chart'
@@ -79,6 +79,8 @@ export default function Money() {
         ))}
       </div>
 
+      <LoanFix m={m} />
+
       {tab === 'tx' && <TxList txs={monthTx} m={m} onOpen={setTx} />}
       {tab === 'accounts' && <Accounts m={m} />}
       {tab === 'budget' && <Budgets month={month} monthTx={monthTx} m={m} />}
@@ -92,6 +94,67 @@ export default function Money() {
 }
 
 type M = ReturnType<typeof useMoney>
+
+/** پیدا کردن درآمد/خرج‌هایی که در واقع همان قرض ثبت‌شده‌اند (دوبار شمرده شده‌اند) */
+function LoanFix({ m }: { m: M }) {
+  const debts = useLiveQuery(() => db.debts.toArray(), []) || []
+  const linked = new Set(m.txs.filter((t) => t.debtId).map((t) => t.debtId))
+  const used = new Set<number>()
+  const pairs: { d: Debt; t: Transaction }[] = []
+  for (const d of debts) {
+    if (linked.has(d.id)) continue
+    const type = d.dir === 'borrowed' ? 'income' : 'expense'
+    const t = m.txs.find((x) => x.type === type && !used.has(x.id!) && x.amount === d.amount && Math.abs(diffDays(x.date, d.date)) <= 3)
+    if (t) {
+      used.add(t.id!)
+      pairs.push({ d, t })
+    }
+  }
+  if (!pairs.length) return null
+  const fix = async (p: { d: Debt; t: Transaction }) => {
+    await db.transactions.update(p.t.id!, {
+      type: 'debt',
+      amount: p.d.dir === 'borrowed' ? p.t.amount : -p.t.amount,
+      debtId: p.d.id,
+      categoryId: undefined,
+      feel: undefined,
+      note: `${p.d.dir === 'borrowed' ? 'قرض از' : 'قرض به'} ${p.d.person}`,
+    })
+    await db.debts.update(p.d.id!, { accountId: p.t.accountId })
+  }
+  return (
+    <div className="mb-3 rounded-2xl bg-warn-soft p-4">
+      <p className="text-sm leading-7">
+        <b>{fa(pairs.length)} قرض</b> هم به‌صورت {pairs[0].d.dir === 'borrowed' ? 'درآمد' : 'خرج'} ثبت شده و دوبار حساب می‌شود. با اصلاح، موجودی تغییر نمی‌کند؛ فقط از گزارش درآمد و خرج بیرون می‌رود.
+      </p>
+      <div className="mt-2 divide-y divide-warn/20 text-sm">
+        {pairs.map((p) => (
+          <div key={p.d.id} className="flex items-center justify-between gap-2 py-2">
+            <span className="min-w-0 truncate">
+              {p.d.person} · <span className="tnum">{shortMoney(p.d.amount)}</span> · {jDayMonth(p.t.date)}
+            </span>
+            <button className="press shrink-0 rounded-xl bg-surface px-3 py-1.5 text-xs font-bold" onClick={() => fix(p)}>
+              اصلاح
+            </button>
+          </div>
+        ))}
+      </div>
+      {pairs.length > 1 && (
+        <Button
+          variant="soft"
+          block
+          className="mt-2 h-10 bg-surface text-sm"
+          onClick={async () => {
+            for (const p of pairs) await fix(p)
+            toast('همه اصلاح شدند')
+          }}
+        >
+          اصلاح همه
+        </Button>
+      )}
+    </div>
+  )
+}
 
 export function TxRow({ t, m, onOpen }: { t: Transaction; m: M; onOpen: (t: Transaction) => void }) {
   const c = t.categoryId ? m.catMap.get(t.categoryId) : undefined
@@ -449,7 +512,7 @@ function Debts({ m }: { m: M }) {
   const open = debts.filter((d) => d.status === 'open')
   const lent = open.filter((d) => d.dir === 'lent').reduce((s, d) => s + debtRemaining(d), 0)
   const borrowed = open.filter((d) => d.dir === 'borrowed').reduce((s, d) => s + debtRemaining(d), 0)
-  const blank: Debt = { person: '', dir: 'lent', amount: 0, date: todayKey(), payments: [], status: 'open', createdAt: Date.now() }
+  const blank: Debt = { person: '', dir: 'borrowed', amount: 0, date: todayKey(), payments: [], status: 'open', createdAt: Date.now(), accountId: m.accounts.find((a) => !a.archived)?.id }
   return (
     <div className="space-y-3">
       <Card>
@@ -548,7 +611,7 @@ function DebtSheet({ d, m, onClose }: { d: Debt | null; m: M; onClose: () => voi
       {cur.due ? <DateField value={cur.due} onChange={(due) => set({ due })} /> : <Button variant="soft" block onClick={() => set({ due: todayKey() })}>تعیین سررسید</Button>}
       {isNew && (
         <>
-          <Label hint="اختیاری؛ موجودی حساب تغییر می‌کند">از کدام حساب؟</Label>
+          <Label hint="موجودی خودکار تغییر می‌کند؛ لازم نیست جدا درآمد یا خرج ثبت کنی">{cur.dir === 'borrowed' ? 'پول به کدام حساب آمد؟' : 'از کدام حساب دادی؟'}</Label>
           <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
             <Chip active={!cur.accountId} onClick={() => set({ accountId: undefined })}>ثبت نکن</Chip>
             {m.accounts.filter((a) => !a.archived).map((a) => (
