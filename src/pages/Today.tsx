@@ -69,7 +69,7 @@ export default function Today() {
   return (
     <div>
       <header className="pt-[calc(env(safe-area-inset-top)+16px)] pb-3">
-        <p className="text-sm text-muted">{greeting()}</p>
+        <p className="deco text-sm text-muted">{greeting()}</p>
         <h1 className="text-[26px] leading-tight font-extrabold tracking-tight">{jLong(today)}</h1>
         {hol && <p className="mt-1 text-sm font-medium text-bad">تعطیل رسمی: {hol}</p>}
       </header>

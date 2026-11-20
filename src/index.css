@@ -182,3 +182,115 @@ textarea::placeholder {
     transition-duration: 1ms !important;
   }
 }
+
+/* ───────────── تم‌ها ─────────────
+   حالت روشن: :root[data-skin=x]:not(.dark)
+   حالت تاریک: :root.dark[data-skin=x] */
+
+/* اقیانوس */
+:root[data-skin='ocean']:not(.dark) {
+  --bg: #eef5f8; --surface: #ffffff; --surface-2: #e2edf2; --ink: #0f2533; --muted: #5b7584; --line: #d3e2ea;
+  --accent: #0369a1; --accent-ink: #ffffff; --accent-soft: #e0f2fe;
+  --good: #0d9488; --good-soft: #ccfbf1;
+}
+:root.dark[data-skin='ocean'] {
+  --bg: #08131b; --surface: #0f1f2b; --surface-2: #172b39; --ink: #e3f1f8; --muted: #8aa6b5; --line: #1f3747;
+  --accent: #38bdf8; --accent-ink: #062033; --accent-soft: #0c2e44;
+  --good: #2dd4bf; --good-soft: #0b2f2c;
+}
+:root[data-skin='ocean'] .card { border-radius: 24px; }
+
+/* غروب */
+:root[data-skin='sunset']:not(.dark) {
+  --bg: #fbf4ec; --surface: #fffdfa; --surface-2: #f5e9dc; --ink: #2b1a10; --muted: #8a6a55; --line: #ecdccb;
+  --accent: #c2410c; --accent-ink: #ffffff; --accent-soft: #ffedd5;
+  --good: #65a30d; --good-soft: #ecfccb;
+}
+:root.dark[data-skin='sunset'] {
+  --bg: #140c07; --surface: #20140c; --surface-2: #2c1d12; --ink: #fbeee2; --muted: #b39680; --line: #3a2718;
+  --accent: #fb923c; --accent-ink: #2b1205; --accent-soft: #3a1d0a;
+  --good: #a3e635; --good-soft: #22300b;
+}
+
+/* مینیمال: سیاه و سفید، گوشه‌های تیز، بدون سایه */
+:root[data-skin='mono']:not(.dark) {
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f1f1f1; --ink: #111111; --muted: #6b6b6b; --line: #e3e3e3;
+  --accent: #111111; --accent-ink: #ffffff; --accent-soft: #ececec;
+  --good: #111111; --good-soft: #ececec;
+}
+:root.dark[data-skin='mono'] {
+  --bg: #000000; --surface: #0b0b0b; --surface-2: #1a1a1a; --ink: #f5f5f5; --muted: #8f8f8f; --line: #262626;
+  --accent: #f5f5f5; --accent-ink: #000000; --accent-soft: #1f1f1f;
+  --good: #f5f5f5; --good-soft: #1f1f1f;
+}
+:root[data-skin='mono'] .card { border-radius: 10px; box-shadow: 0 0 0 1px var(--line); }
+:root[data-skin='mono'] .rounded-2xl,
+:root[data-skin='mono'] .rounded-\[20px\],
+:root[data-skin='mono'] .rounded-t-\[28px\] { border-radius: 10px; }
+:root[data-skin='mono'] .rounded-t-\[28px\] { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+:root[data-skin='mono'] .rounded-xl { border-radius: 8px; }
+
+/* ───────────── حنا 🎀 ───────────── */
+:root[data-skin='hana']:not(.dark) {
+  --bg: #fff1f7; --surface: #ffffff; --surface-2: #ffe4f0; --ink: #6b2147; --muted: #b5728f; --line: #fbcfe2;
+  --accent: #ec4899; --accent-ink: #ffffff; --accent-soft: #fde7f3;
+  --good: #f472b6; --good-soft: #fde7f3;
+  --bad: #e11d74; --bad-soft: #ffe0ec;
+  --warn: #c084fc; --warn-soft: #f5ebff;
+  --accent-2: #c084fc;
+  --dot: #fbcfe2;
+}
+:root.dark[data-skin='hana'] {
+  --bg: #1d0f1a; --surface: #2a1626; --surface-2: #381e33; --ink: #ffe4f1; --muted: #c99ab3; --line: #4a2742;
+  --accent: #f9a8d4; --accent-ink: #4a0d2c; --accent-soft: #46203d;
+  --good: #f9a8d4; --good-soft: #46203d;
+  --bad: #fb7185; --bad-soft: #4a1726;
+  --warn: #d8b4fe; --warn-soft: #3b2350;
+  --accent-2: #d8b4fe;
+  --dot: #3a1d34;
+}
+:root[data-skin='hana'] {
+  --deco: ' 🎀';
+}
+/* پس‌زمینهٔ خال‌خالی ریز */
+:root[data-skin='hana'] body {
+  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+:root[data-skin='hana'] .card {
+  border-radius: 28px;
+  box-shadow: 0 0 0 1.5px var(--line), 0 8px 22px -12px rgb(236 72 153 / 0.35);
+}
+:root.dark[data-skin='hana'] .card { box-shadow: 0 0 0 1.5px var(--line), 0 8px 22px -12px rgb(0 0 0 / 0.6); }
+:root[data-skin='hana'] .rounded-2xl { border-radius: 22px; }
+:root[data-skin='hana'] .rounded-xl { border-radius: 16px; }
+:root[data-skin='hana'] .rounded-\[20px\] { border-radius: 26px; }
+/* دکمه‌های اصلی با گرادیان صورتی تا یاسی */
+:root[data-skin='hana'] .bg-accent {
+  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+/* تیتر صفحه‌ها با متن گرادیانی */
+:root[data-skin='hana'] h1 {
+  background-image: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+:root[data-skin='hana'] .field { border-radius: 18px; }
+:root[data-skin='hana'] .field:focus { box-shadow: 0 0 0 4px var(--accent-soft); }
+
+/* نشانگر تب فعال: نقطه، در حنا قلب */
+.tab-ind { height: 4px; width: 4px; border-radius: 99px; background: currentColor; }
+:root[data-skin='hana'] .tab-ind { background: none; width: auto; height: auto; font-size: 8px; line-height: 1; }
+:root[data-skin='hana'] .tab-ind::before { content: '♥'; }
+
+.deco::after { content: var(--deco, ''); }
+
+/* قلب‌های ریز هنگام تیک زدن در تم حنا */
+.heart-burst {
+  position: fixed;
+  pointer-events: none;
+  z-index: 70;
+  font-size: 14px;
+  color: var(--accent);
+}

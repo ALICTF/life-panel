@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
-import { Check, ChevronRight, Plus } from 'lucide-react'
+import { Check, ChevronRight, Heart, Plus } from 'lucide-react'
+import { currentSkin } from '../lib/theme'
 import { useNavigate } from 'react-router-dom'
 import { fa, num, numToWords, parseInt0 } from '../lib/format'
-import { pop, haptic } from '../lib/anim'
+import { pop, haptic, heartBurst } from '../lib/anim'
 
 type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'soft' | 'ghost' | 'danger'; block?: boolean }
 
@@ -155,6 +156,7 @@ export function CheckButton({ checked, onChange, color, size = 30, label }: { ch
         if (!checked) {
           pop(ref.current)
           haptic()
+          if (currentSkin() === 'hana') heartBurst(ref.current)
         }
         onChange()
       }}
@@ -167,7 +169,7 @@ export function CheckButton({ checked, onChange, color, size = 30, label }: { ch
         color: '#fff',
       }}
     >
-      {checked && <Check size={size * 0.6} strokeWidth={3} />}
+      {checked && (currentSkin() === 'hana' ? <Heart size={size * 0.55} strokeWidth={2.5} fill="currentColor" /> : <Check size={size * 0.6} strokeWidth={3} />)}
     </button>
   )
 }

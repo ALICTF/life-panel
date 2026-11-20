@@ -6,13 +6,13 @@ import type { Category } from '../db/types'
 import { exportBackup, exportForAnalysis, readBackup, restoreBackup, wipeAll, type BackupFile } from '../lib/backup'
 import { jLong, dkey } from '../lib/date'
 import { fa, num } from '../lib/format'
-import { useTheme } from '../lib/theme'
+import { SKINS, useTheme } from '../lib/theme'
 import { Button, Card, Label, PageHeader, Segmented } from '../ui/kit'
 import { Sheet } from '../ui/Sheet'
 import { toast } from '../ui/Toast'
 
 export default function Settings() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, skin, setSkin } = useTheme()
   const [catKind, setCatKind] = useState<Category['kind'] | null>(null)
   const [areasOpen, setAreasOpen] = useState(false)
   const [restore, setRestore] = useState<BackupFile | null>(null)
@@ -33,7 +33,32 @@ export default function Settings() {
     <div>
       <PageHeader title="تنظیمات" back />
       <div className="space-y-3">
-        <Card title="ظاهر">
+        <Card title="تم">
+          <div className="grid grid-cols-2 gap-2.5">
+            {SKINS.map((k) => (
+              <button
+                key={k.id}
+                onClick={() => setSkin(k.id)}
+                className={`press overflow-hidden rounded-2xl text-start ring-2 transition-shadow ${skin === k.id ? 'ring-accent' : 'ring-line'}`}
+              >
+                <div className="relative h-20 p-2.5" style={{ background: k.swatch[0], backgroundImage: k.id === 'hana' ? `radial-gradient(${k.swatch[2]} 1.5px, transparent 1.6px)` : undefined, backgroundSize: '12px 12px' }}>
+                  <div className="h-2.5 w-14 rounded-full" style={{ background: k.id === 'hana' ? `linear-gradient(90deg, ${k.swatch[1]}, #c084fc)` : k.swatch[3], opacity: k.id === 'hana' ? 1 : 0.85 }} />
+                  <div className="mt-2 flex gap-1.5">
+                    <div className="h-8 flex-1 shadow-sm" style={{ background: '#fff', borderRadius: k.id === 'mono' ? 4 : k.id === 'hana' ? 14 : 10, boxShadow: k.id === 'hana' ? `0 0 0 1px ${k.swatch[2]}` : undefined }} />
+                    <div className="grid size-8 place-items-center text-xs text-white" style={{ background: k.id === 'hana' ? `linear-gradient(135deg, ${k.swatch[1]}, #c084fc)` : k.swatch[1], borderRadius: k.id === 'mono' ? 4 : k.id === 'hana' ? 99 : 10 }}>
+                      {k.id === 'hana' ? '♥' : '✓'}
+                    </div>
+                  </div>
+                  {k.id === 'hana' && <span className="absolute top-1.5 left-2 text-sm">🎀</span>}
+                </div>
+                <div className="bg-surface px-3 py-2">
+                  <p className="text-sm font-bold">{k.name}</p>
+                  <p className="truncate text-[11px] text-muted">{k.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+          <Label>روشنایی</Label>
           <Segmented
             value={theme}
             onChange={setTheme}

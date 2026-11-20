@@ -76,3 +76,35 @@ export const haptic = (ms = 8) => {
     /* پشتیبانی نمی‌شود */
   }
 }
+
+/** چند قلب کوچک که از دکمه بالا می‌روند (تم حنا) */
+export function heartBurst(el: Element | null) {
+  if (!el || reduced()) return
+  const r = el.getBoundingClientRect()
+  const cx = r.left + r.width / 2
+  const cy = r.top + r.height / 2
+  const hearts = Array.from({ length: 6 }, (_, i) => {
+    const h = document.createElement('span')
+    h.className = 'heart-burst'
+    h.textContent = i % 3 === 0 ? '✿' : '♥'
+    h.style.left = `${cx - 7}px`
+    h.style.top = `${cy - 8}px`
+    document.body.appendChild(h)
+    setTimeout(() => h.remove(), 1200)
+    return h
+  })
+  hearts.forEach((h, i) => {
+    const angle = (-90 + (i - 2.5) * 28) * (Math.PI / 180)
+    const dist = 26 + Math.random() * 18
+    animate(h, {
+      translateX: [0, Math.cos(angle) * dist],
+      translateY: [0, Math.sin(angle) * dist - 10],
+      scale: [0.4, 1.1, 0.8],
+      opacity: [1, 1, 0],
+      rotate: [0, (Math.random() - 0.5) * 60],
+      duration: 650 + Math.random() * 200,
+      ease: 'outQuart',
+      onComplete: () => h.remove(),
+    })
+  })
+}

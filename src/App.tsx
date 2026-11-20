@@ -42,11 +42,19 @@ function TabBar() {
             end={to === '/'}
             className={({ isActive }) => {
               const a = isActive || (to === '/more' && moreActive) || (to === '/calendar' && loc.pathname === '/planner')
-              return `press flex h-16 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-semibold ${a ? 'text-accent' : 'text-muted'}`
+              return `press flex h-16 flex-1 flex-col items-center justify-center gap-0.5 pt-1 text-[11px] font-semibold ${a ? 'text-accent' : 'text-muted'}`
             }}
           >
-            <Icon size={23} strokeWidth={2} />
-            {label}
+            {({ isActive }) => {
+              const a = isActive || (to === '/more' && moreActive) || (to === '/calendar' && loc.pathname === '/planner')
+              return (
+                <>
+                  <Icon size={23} strokeWidth={a ? 2.4 : 2} />
+                  {label}
+                  <span className={a ? 'tab-ind' : 'h-1'} />
+                </>
+              )
+            }}
           </NavLink>
         ))}
       </div>
