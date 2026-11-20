@@ -22,6 +22,7 @@ import { PlanList } from './Planner'
 import { TxSheet, blankTx } from './TxSheet'
 import { GoalCard, useGoalCtx } from './Goals'
 import { periodOf } from './Reviews'
+import { QuickBar } from './QuickLog'
 
 export default function Today() {
   const today = todayKey()
@@ -79,6 +80,11 @@ export default function Today() {
           <SummaryRing label="تسک‌ها" value={sorted.length ? doneCount / sorted.length : 0} text={`${fa(doneCount)}/${fa(sorted.length)}`} />
           <SummaryRing label="عادت‌ها" value={habits.length ? habitDone / habits.length : 0} text={`${fa(habitDone)}/${fa(habits.length)}`} color="var(--good)" />
           <SummaryRing label="بایدها" value={plan?.musts.length ? plan.musts.filter((m) => m.done).length / plan.musts.length : 0} text={plan?.musts.length ? `${fa(plan.musts.filter((m) => m.done).length)}/${fa(plan.musts.length)}` : '—'} color="var(--warn)" />
+        </div>
+
+        {/* ثبت سریع */}
+        <div>
+          <QuickBar />
         </div>
 
         {/* یادآوری‌های داخلی */}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Ban, Plus, Repeat, Trash2, X } from 'lucide-react'
+import { Ban, Plus, Repeat, Timer, Trash2, X } from 'lucide-react'
+import { useFocus } from './Focus'
 import { db } from '../db/db'
 import type { Recurring, Task } from '../db/types'
 import { addDaysKey, fromMin, jDay, toMin, weekIndex } from '../lib/date'
@@ -19,6 +20,7 @@ export function TaskSheet({ task, onClose }: { task: Task | null; onClose: () =>
   const [weekdays, setWeekdays] = useState<number[]>([])
   const [applyAll, setApplyAll] = useState(false)
   const [sub, setSub] = useState('')
+  const focus = useFocus()
   const cats = useLiveQuery(() => db.categories.where('kind').equals('task').sortBy('order'), []) || []
   const goals = useLiveQuery(() => db.goals.where('status').equals('active').toArray(), []) || []
   const rule = useLiveQuery(() => (task?.recurId ? db.recurring.get(task.recurId) : undefined), [task?.recurId])
@@ -96,6 +98,18 @@ export function TaskSheet({ task, onClose }: { task: Task | null; onClose: () =>
               set({ status: done ? 'done' : 'todo' })
             }}
           />
+        )}
+        {!isNew && cur.status === 'todo' && (
+          <button
+            className="press grid size-11 shrink-0 place-items-center rounded-2xl bg-surface-2 text-[#4f46e5]"
+            onClick={() => {
+              onClose()
+              setTimeout(() => focus.openPicker(cur), 350)
+            }}
+            aria-label="شروع تایمر تمرکز"
+          >
+            <Timer size={20} />
+          </button>
         )}
         <input
           className="field flex-1 text-lg font-semibold"

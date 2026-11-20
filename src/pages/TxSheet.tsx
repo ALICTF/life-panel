@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeftRight, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, MessageSquareText, Trash2 } from 'lucide-react'
+import { SmsImport } from './SmsImport'
 import { db } from '../db/db'
 import type { Transaction, TxType } from '../db/types'
 import { jDay, nowTime, todayKey } from '../lib/date'
@@ -25,6 +26,7 @@ export function TxSheet({ tx, onClose }: { tx: Transaction | null; onClose: () =
   const [t, setT] = useState<Transaction | null>(null)
   const [src, setSrc] = useState<Transaction | null>(null)
   const [repeat, setRepeat] = useState(false)
+  const [sms, setSms] = useState(false)
   const accounts = useLiveQuery(() => db.accounts.orderBy('order').filter((a) => !a.archived).toArray(), []) || []
   const cats = useLiveQuery(() => db.categories.orderBy('order').toArray(), []) || []
   const usage = useLiveQuery(async () => {
@@ -86,6 +88,18 @@ export function TxSheet({ tx, onClose }: { tx: Transaction | null; onClose: () =
         </Button>
       }
     >
+      {isNew && (
+        <button className="press mb-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line py-2.5 text-sm font-semibold text-muted" onClick={() => setSms(true)}>
+          <MessageSquareText size={17} /> ثبت از روی پیامک بانک
+        </button>
+      )}
+      <SmsImport
+        open={sms}
+        onClose={() => {
+          setSms(false)
+          onClose()
+        }}
+      />
       {cur.type !== 'adjust' && cur.type !== 'debt' && (
         <Segmented
           value={cur.type as 'expense' | 'income' | 'transfer'}

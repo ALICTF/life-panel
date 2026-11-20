@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type {
-  Account, Budget, Category, DayPlan, Debt, Goal, Habit, HabitLog, HealthEntry,
-  LogEvent, Note, Recurring, Review, Setting, Task, Transaction,
+  Account, Budget, Category, DayPlan, Debt, FocusSession, Goal, Habit, HabitLog, HealthEntry,
+  LogEvent, Meal, Med, MedLog, Note, Recurring, Review, Setting, Task, Transaction, Workout,
 } from './types'
 
 export class PanelDB extends Dexie {
@@ -21,6 +21,11 @@ export class PanelDB extends Dexie {
   notes!: Table<Note, number>
   events!: Table<LogEvent, number>
   settings!: Table<Setting, string>
+  meals!: Table<Meal, number>
+  meds!: Table<Med, number>
+  medLogs!: Table<MedLog, number>
+  workouts!: Table<Workout, number>
+  focus!: Table<FocusSession, number>
 
   constructor() {
     super('panel')
@@ -51,6 +56,14 @@ export class PanelDB extends Dexie {
           if (t.recurId && !t.postponed) t.originalDate = t.date
         }),
     )
+    // نسخهٔ ۳: وعده‌ها، دارو، ورزش و تمرکز
+    this.version(3).stores({
+      meals: '++id, date',
+      meds: '++id, order',
+      medLogs: '++id, date, medId',
+      workouts: '++id, date',
+      focus: '++id, date, taskId',
+    })
   }
 }
 
@@ -59,6 +72,7 @@ export const db = new PanelDB()
 export const TABLES = [
   'health', 'habits', 'habitLogs', 'tasks', 'dayPlans', 'goals', 'reviews', 'accounts',
   'transactions', 'recurring', 'categories', 'budgets', 'debts', 'notes', 'events', 'settings',
+  'meals', 'meds', 'medLogs', 'workouts', 'focus',
 ] as const
 
 export async function getSetting<T>(key: string, fallback: T): Promise<T> {

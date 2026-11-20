@@ -4,6 +4,7 @@ import { CalendarDays, CheckCircle2, Home, LayoutGrid, Wallet } from 'lucide-rea
 import { Toaster } from './ui/Toast'
 import { runAutomation } from './lib/automation'
 import { useTheme } from './lib/theme'
+import { FocusProvider } from './pages/Focus'
 
 const Today = lazy(() => import('./pages/Today'))
 const CalendarPage = lazy(() => import('./pages/Calendar'))
@@ -65,6 +66,7 @@ export default function App() {
 
   return (
     <HashRouter>
+      <FocusProvider>
       <main className="mx-auto min-h-dvh max-w-xl px-4 pb-[calc(96px+env(safe-area-inset-bottom))]">
         {ready && (
           <Suspense fallback={null}>
@@ -86,6 +88,7 @@ export default function App() {
         )}
       </main>
       <TabBar />
+      </FocusProvider>
       <Toaster />
     </HashRouter>
   )

@@ -14,6 +14,7 @@ import { Sheet } from '../ui/Sheet'
 import { DateField } from '../ui/DatePicker'
 import { toast } from '../ui/Toast'
 import { TxSheet, blankTx } from './TxSheet'
+import { SmsButton, SmsImport } from './SmsImport'
 
 type Tab = 'tx' | 'accounts' | 'budget' | 'debts' | 'report'
 
@@ -30,6 +31,7 @@ export default function Money() {
   const [tab, setTab] = useState<Tab>('tx')
   const [month, setMonth] = useState(jMonthKey(todayKey()))
   const [tx, setTx] = useState<Transaction | null>(null)
+  const [sms, setSms] = useState(false)
   const m = useMoney()
   const { from, to } = jMonthRange(month)
   const monthTx = m.txs.filter((t) => t.date >= from && t.date <= to)
@@ -40,7 +42,7 @@ export default function Money() {
 
   return (
     <div>
-      <PageHeader title="مالی" sub="دخل و خرج، حساب‌ها و بودجه" />
+      <PageHeader title="مالی" sub="دخل و خرج، حساب‌ها و بودجه" action={<SmsButton onClick={() => setSms(true)} />} />
       <div className="card mb-3 p-4">
         <p className="text-xs text-muted">موجودی کل</p>
         <p className={`tnum mt-0.5 text-3xl font-extrabold ${total < 0 ? 'text-bad' : ''}`}>
@@ -89,6 +91,7 @@ export default function Money() {
 
       {(tab === 'tx' || tab === 'report' || tab === 'budget') && <Fab onClick={() => setTx(blankTx())} label="تراکنش جدید" />}
       <TxSheet tx={tx} onClose={() => setTx(null)} />
+      <SmsImport open={sms} onClose={() => setSms(false)} />
     </div>
   )
 }

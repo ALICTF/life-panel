@@ -186,6 +186,8 @@ export default function Health() {
           </>
         )}
 
+        <ActivityCard keys={data.keys} labels={labels} />
+
         <Card title="چک‌این امروز">
           <CheckIn />
         </Card>
@@ -256,5 +258,33 @@ function ProfileSheet({ open, onClose, profile }: { open: boolean; onClose: () =
         {d ? <DateField value={d} onChange={setD} /> : <Button variant="soft" block onClick={() => setD(addDaysKey(todayKey(), 90))}>تعیین تاریخ</Button>}
       </div>
     </Sheet>
+  )
+}
+
+function ActivityCard({ keys, labels }: { keys: string[]; labels: string[] }) {
+  const from = keys[0]
+  const to = keys[keys.length - 1]
+  const workouts = useLiveQuery(() => db.workouts.where('date').between(from, to, true, true).toArray(), [from, to]) || []
+  const health = useLiveQuery(() => db.health.where('date').between(from, to, true, true).toArray(), [from, to]) || []
+  const meals = useLiveQuery(() => db.meals.where('date').between(from, to, true, true).toArray(), [from, to]) || []
+  if (!workouts.length && !health.some((h) => h.water) && !meals.length) return null
+  const mins = keys.map((k) => workouts.filter((w) => w.date === k).reduce((s, w) => s + w.minutes, 0))
+  const waterDays = health.filter((h) => h.water)
+  const total = mins.reduce((a, b) => a + b, 0)
+  const snacks = meals.filter((m) => m.type === 'snack').length
+  const opt = baseOptions()
+  return (
+    <Card title="ورزش، آب و وعده‌ها">
+      <div className="mb-3 grid grid-cols-3 gap-3">
+        <Stat label="دقیقهٔ ورزش" value={num(total)} sub={`در ${fa(keys.length)} روز`} />
+        <Stat label="میانگین آب" value={waterDays.length ? num(waterDays.reduce((s, h) => s + h.water!, 0) / waterDays.length, 1) : '—'} sub="لیوان در روز" />
+        <Stat label="میان‌وعده" value={num(snacks)} sub="بار" tone={snacks ? 'bad' : undefined} />
+      </div>
+      {total > 0 && (
+        <div className="h-36">
+          <Bar data={{ labels, datasets: [{ label: 'دقیقه ورزش', data: mins, backgroundColor: '#16a34a', borderRadius: 4, maxBarThickness: 18 }] }} options={opt} />
+        </div>
+      )}
+    </Card>
   )
 }

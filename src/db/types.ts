@@ -7,6 +7,7 @@ export interface HealthEntry {
   mood?: number // 1..5
   energy?: number // 1..5
   sleep?: number // ساعت
+  water?: number // لیوان
   updatedAt: number
 }
 
@@ -224,4 +225,53 @@ export interface LogEvent {
 export interface Setting {
   key: string
   value: unknown
+}
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export interface Meal {
+  id?: number
+  date: string
+  type: MealType
+  time: string
+  at: number
+  note?: string
+  carbs?: boolean
+}
+
+export interface Med {
+  id?: number
+  name: string
+  times: string[] // ساعت هر نوبت، مثل ["08:00", "20:00"]
+  active: boolean
+  order: number
+}
+
+export interface MedLog {
+  id?: number
+  medId: number
+  date: string
+  dose: number // شمارهٔ نوبت از ۰
+  at: number // زمان واقعی مصرف
+}
+
+export interface Workout {
+  id?: number
+  date: string
+  type: string
+  minutes: number
+  intensity: 1 | 2 | 3
+  at: number
+  note?: string
+}
+
+export interface FocusSession {
+  id?: number
+  date: string
+  taskId?: number
+  title: string
+  startAt: number
+  planned: number // دقیقه
+  actual: number // دقیقه
+  completed: boolean
 }
