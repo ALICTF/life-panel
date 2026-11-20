@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Activity, ChevronLeft, Compass, NotebookPen, NotebookText, Settings } from 'lucide-react'
+import { Activity, ChevronLeft, Compass, GraduationCap, NotebookPen, NotebookText, Settings } from 'lucide-react'
 import { db } from '../db/db'
 import { fa } from '../lib/format'
 import { PageHeader } from '../ui/kit'
@@ -12,13 +12,15 @@ export default function More() {
     notes: await db.notes.where('deleted').equals(0).count(),
     health: await db.health.count(),
     reviews: await db.reviews.count(),
+    learn: await db.learn.where('status').equals('active').count(),
   }), [])
   const ref = useStagger<HTMLDivElement>([])
   const items = [
     { to: '/goals', icon: Compass, title: 'اهداف', sub: counts ? `${fa(counts.goals)} هدف فعال` : '', color: '#4f46e5' },
+    { to: '/learn', icon: GraduationCap, title: 'یادگیری', sub: counts?.learn ? `${fa(counts.learn)} مورد فعال` : 'زبان، مهارت، کتاب', color: '#0d9488' },
     { to: '/health', icon: Activity, title: 'سلامت', sub: 'نمودار وزن و PAI', color: '#e11d48' },
     { to: '/notes', icon: NotebookText, title: 'یادداشت‌ها', sub: counts ? `${fa(counts.notes)} یادداشت` : '', color: '#ca8a04' },
-    { to: '/reviews', icon: NotebookPen, title: 'مرورها', sub: 'هفتگی، ماهانه، سالانه', color: '#0d9488' },
+    { to: '/reviews', icon: NotebookPen, title: 'مرورها', sub: 'هفتگی، ماهانه، سالانه', color: '#ea580c' },
     { to: '/settings', icon: Settings, title: 'تنظیمات', sub: 'ظاهر، دسته‌ها، پشتیبان', color: '#57534e' },
   ]
   return (

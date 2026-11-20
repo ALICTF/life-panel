@@ -78,6 +78,9 @@ const SCHEMA = {
   medLogs: 'مصرف دارو: dose شمارهٔ نوبت، at زمان واقعی مصرف',
   workouts: 'ورزش: type نوع، minutes مدت، intensity شدت ۱ تا ۳',
   focus: 'جلسه‌های تمرکز: planned دقیقهٔ برنامه، actual دقیقهٔ واقعی، completed تا آخر رفت یا نه، taskId تسک مربوط',
+  learn: 'یادگیری: kind زبان/مهارت/کتاب، why هدف، source منبع، schedule برنامه (روز، ساعت، دقیقه)، total و current صفحه یا درس، minDaily حداقل روزانه، deadline مهلت، pledge قرار با خود',
+  learnLogs: 'ثبت‌های یادگیری: minutes دقیقه، amount صفحه یا درس پیش‌رفته، skills مهارت‌های زبانی تمرین‌شده',
+  words: 'دفترچهٔ لغت: reviews تعداد مرور، known بلد شده',
   events: 'لاگ رفتاری: app_open_day، habit_done، habit_slip (با ساعت)، task_done (با ساعت و تأخیر)، task_postponed و غیره',
 }
 
@@ -91,13 +94,15 @@ export async function exportForAnalysis() {
   const meals = await db.meals.toArray()
   const workouts = await db.workouts.toArray()
   const focus = await db.focus.toArray()
+  const learnLogs = await db.learnLogs.toArray()
+  const learnItems = await db.learn.toArray()
 
   // خلاصهٔ هفتگی
   const today = todayKey()
-  const weeks = new Map<string, { tasksPlanned: number; tasksDone: number; tasksDropped: number; postponed: number; expense: number; impulse: number; weights: number[]; pai: number; moods: number[]; sleeps: number[]; slips: number; goodDone: number; water: number[]; workoutMin: number; snacks: number; focusMin: number }>()
+  const weeks = new Map<string, { tasksPlanned: number; tasksDone: number; tasksDropped: number; postponed: number; expense: number; impulse: number; weights: number[]; pai: number; moods: number[]; sleeps: number[]; slips: number; goodDone: number; water: number[]; workoutMin: number; snacks: number; focusMin: number; learnMin: number; pages: number }>()
   const W = (k: string) => {
     const w = weekStart(k)
-    if (!weeks.has(w)) weeks.set(w, { tasksPlanned: 0, tasksDone: 0, tasksDropped: 0, postponed: 0, expense: 0, impulse: 0, weights: [], pai: 0, moods: [], sleeps: [], slips: 0, goodDone: 0, water: [], workoutMin: 0, snacks: 0, focusMin: 0 })
+    if (!weeks.has(w)) weeks.set(w, { tasksPlanned: 0, tasksDone: 0, tasksDropped: 0, postponed: 0, expense: 0, impulse: 0, weights: [], pai: 0, moods: [], sleeps: [], slips: 0, goodDone: 0, water: [], workoutMin: 0, snacks: 0, focusMin: 0, learnMin: 0, pages: 0 })
     return weeks.get(w)!
   }
   // فقط تسک‌های تا امروز؛ نمونه‌های تکراری آینده هنوز «برنامه» نشده‌اند
@@ -127,6 +132,12 @@ export async function exportForAnalysis() {
   for (const m of meals) if (m.type === 'snack') W(m.date).snacks++
   for (const x of workouts) W(x.date).workoutMin += x.minutes
   for (const f of focus) W(f.date).focusMin += f.actual
+  const bookIds = new Set(learnItems.filter((i) => i.kind === 'book').map((i) => i.id))
+  for (const l of learnLogs) {
+    const w = W(l.date)
+    w.learnMin += l.minutes || 0
+    if (bookIds.has(l.itemId)) w.pages += l.amount || 0
+  }
   const htype = new Map(habits.map((h) => [h.id!, h.type]))
   const byWeekday = Array.from({ length: 7 }, () => ({ slips: 0, goodDone: 0, tasksDone: 0, expense: 0 }))
   for (const l of logs) {
@@ -164,6 +175,8 @@ export async function exportForAnalysis() {
       workoutMinutes: w.workoutMin,
       snacks: w.snacks,
       focusMinutes: Math.round(w.focusMin),
+      learningMinutes: w.learnMin,
+      pagesRead: w.pages,
     }))
   const habitSummary = habits.map((h) => {
     const s = habitStats(h, logs)

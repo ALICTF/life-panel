@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Check, Coffee, Square, Timer } from 'lucide-react'
 import { db, logEvent } from '../db/db'
-import type { Task } from '../db/types'
+import type { LearnItem, Task } from '../db/types'
+import { addLearnLog } from '../lib/learn'
 import { todayKey } from '../lib/date'
 import { fa } from '../lib/format'
 import { setTaskDone } from '../lib/tasks'
@@ -13,6 +14,7 @@ import { toast } from '../ui/Toast'
 
 interface Run {
   taskId?: number
+  learnId?: number
   title: string
   startAt: number
   planned: number // دقیقه
@@ -46,7 +48,7 @@ const vibrate = () => {
 }
 
 interface Ctx {
-  openPicker: (task?: Task) => void
+  openPicker: (task?: Task, learn?: LearnItem) => void
 }
 const FocusCtx = createContext<Ctx>({ openPicker: () => {} })
 export const useFocus = () => useContext(FocusCtx)
@@ -54,7 +56,7 @@ export const useFocus = () => useContext(FocusCtx)
 /** تایمر تمرکز: زمان از روی ساعت واقعی حساب می‌شود، پس با خاموش شدن صفحه هم درست می‌ماند */
 export function FocusProvider({ children }: { children: ReactNode }) {
   const [run, setRunState] = useState<Run | null>(read)
-  const [picker, setPicker] = useState<{ task?: Task } | null>(null)
+  const [picker, setPicker] = useState<{ task?: Task; learn?: LearnItem } | null>(null)
   const [view, setView] = useState(false)
   const [now, setNow] = useState(Date.now())
   const savingRef = useRef(false)
@@ -80,7 +82,12 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 
   const saveSession = useCallback(async (r: Run, actualMin: number, completed: boolean) => {
     if (actualMin < 1) return
-    await db.focus.add({ date: todayKey(), taskId: r.taskId, title: r.title, startAt: r.startAt, planned: r.planned, actual: Math.round(actualMin * 10) / 10, completed })
+    await db.focus.add({ date: todayKey(), taskId: r.taskId, learnId: r.learnId, title: r.title, startAt: r.startAt, planned: r.planned, actual: Math.round(actualMin * 10) / 10, completed })
+    // جلسهٔ تمرکز روی یک مورد یادگیری، خودکار دقیقهٔ تمرین ثبت می‌کند
+    if (r.learnId) {
+      const it = await db.learn.get(r.learnId)
+      if (it) await addLearnLog(it, { minutes: Math.round(actualMin) })
+    }
     await logEvent('focus', r.taskId, { minutes: Math.round(actualMin), completed, hour: new Date(r.startAt).getHours() })
   }, [])
 
@@ -110,12 +117,12 @@ export function FocusProvider({ children }: { children: ReactNode }) {
     setView(false)
   }
 
-  const openPicker = useCallback((task?: Task) => {
+  const openPicker = useCallback((task?: Task, learn?: LearnItem) => {
     if (read()) {
       setView(true)
       return
     }
-    setPicker({ task })
+    setPicker({ task, learn })
   }, [])
 
   return (
@@ -153,7 +160,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
                     <Check size={18} /> تسک تمام شد
                   </Button>
                 )}
-                <Button block onClick={() => setRun({ title: run.title, taskId: run.taskId, planned: 5, phase: 'break', startAt: Date.now() })}>
+                <Button block onClick={() => setRun({ title: run.title, taskId: run.taskId, learnId: run.learnId, planned: 5, phase: 'break', startAt: Date.now() })}>
                   <Coffee size={18} /> ۵ دقیقه استراحت
                 </Button>
                 <Button variant="ghost" block onClick={() => setRun({ ...run, startAt: Date.now(), saved: false })}>
@@ -166,7 +173,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
             ) : (
               <div className="mt-5 w-full space-y-2">
                 <p className="text-center font-bold">استراحت تمام شد</p>
-                <Button block onClick={() => setRun({ title: run.title, taskId: run.taskId, planned: 25, phase: 'work', startAt: Date.now() })}>
+                <Button block onClick={() => setRun({ title: run.title, taskId: run.taskId, learnId: run.learnId, planned: 25, phase: 'work', startAt: Date.now() })}>
                   شروع جلسهٔ بعد
                 </Button>
                 <Button variant="ghost" block className="text-muted" onClick={stop}>
@@ -200,9 +207,11 @@ function FocusPill({ run, remaining, onOpen }: { run: Run; remaining: number; on
   )
 }
 
-function FocusPicker({ state, onClose, onStart }: { state: { task?: Task } | null; onClose: () => void; onStart: (r: Omit<Run, 'startAt'>) => void }) {
+function FocusPicker({ state, onClose, onStart }: { state: { task?: Task; learn?: LearnItem } | null; onClose: () => void; onStart: (r: Omit<Run, 'startAt'>) => void }) {
   const today = todayKey()
-  const tasks = useLiveQuery(() => db.tasks.where('date').equals(today).filter((t) => t.status === 'todo').toArray(), [today]) || []
+  const tasks = useLiveQuery(() => db.tasks.where('date').equals(today).filter((t) => t.status === 'todo' && !t.learnId).toArray(), [today]) || []
+  const learns = useLiveQuery(() => db.learn.where('status').equals('active').toArray(), []) || []
+  const [learnId, setLearnId] = useState<number | undefined>()
   const [taskId, setTaskId] = useState<number | undefined>()
   const [title, setTitle] = useState('')
   const [minutes, setMinutes] = useState(25)
@@ -210,8 +219,11 @@ function FocusPicker({ state, onClose, onStart }: { state: { task?: Task } | nul
   if (state && state !== src) {
     setSrc(state)
     setTaskId(state.task?.id)
+    setLearnId(state.learn?.id)
     setTitle(state.task?.title || '')
+    if (state.learn?.schedule?.minutes) setMinutes(state.learn.schedule.minutes)
   }
+  const learn = learns.find((l) => l.id === learnId)
   const chosen = tasks.find((t) => t.id === taskId)
   return (
     <Sheet
@@ -219,26 +231,38 @@ function FocusPicker({ state, onClose, onStart }: { state: { task?: Task } | nul
       onClose={onClose}
       title="جلسهٔ تمرکز"
       footer={
-        <Button block disabled={!chosen && !title.trim()} onClick={() => onStart({ taskId, title: chosen?.title || title.trim(), planned: minutes, phase: 'work' })}>
+        <Button block disabled={!chosen && !learn && !title.trim()} onClick={() => onStart({ taskId: learn ? undefined : taskId, learnId, title: learn?.title || chosen?.title || title.trim(), planned: minutes, phase: 'work' })}>
           <Timer size={18} /> شروع {fa(minutes)} دقیقه
         </Button>
       }
     >
+      {learns.length > 0 && (
+        <>
+          <Label>یادگیری</Label>
+          <div className="flex flex-wrap gap-2">
+            {learns.map((l) => (
+              <Chip key={l.id} active={learnId === l.id} onClick={() => { setLearnId(learnId === l.id ? undefined : l.id); setTaskId(undefined) }}>
+                {l.kind === 'book' ? '📖' : l.kind === 'language' ? '🗣️' : '🛠️'} {l.title}
+              </Chip>
+            ))}
+          </div>
+        </>
+      )}
       {tasks.length > 0 && (
         <>
           <Label>روی کدام تسک؟</Label>
           <div className="flex flex-wrap gap-2">
             {tasks.map((t) => (
-              <Chip key={t.id} active={taskId === t.id} onClick={() => setTaskId(taskId === t.id ? undefined : t.id)}>
+              <Chip key={t.id} active={taskId === t.id} onClick={() => { setTaskId(taskId === t.id ? undefined : t.id); setLearnId(undefined) }}>
                 {t.title}
               </Chip>
             ))}
           </div>
         </>
       )}
-      {!chosen && (
+      {!chosen && !learn && (
         <>
-          <Label>{tasks.length ? 'یا یک عنوان آزاد' : 'روی چه کاری؟'}</Label>
+          <Label>{tasks.length || learns.length ? 'یا یک عنوان آزاد' : 'روی چه کاری؟'}</Label>
           <input className="field" placeholder="مثلاً طراحی صفحهٔ محصول" value={title} onChange={(e) => setTitle(e.target.value)} />
         </>
       )}

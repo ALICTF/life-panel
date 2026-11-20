@@ -54,6 +54,7 @@ export async function computeStats(start: string, end: string) {
     }
   }
   const plans = await db.dayPlans.where('date').between(start, to, true, true).toArray()
+  const ll = await db.learnLogs.where('date').between(start, to, true, true).toArray()
   const days = rangeKeys(start, to).length
   return {
     tasksDone: done,
@@ -66,6 +67,8 @@ export async function computeStats(start: string, end: string) {
     expense,
     income,
     plannedDays: plans.filter((p) => p.plannedAt).length,
+    learnMinutes: ll.reduce((a, l) => a + (l.minutes || 0), 0),
+    learnSessions: ll.length,
     days,
   }
 }
@@ -148,6 +151,7 @@ function ReviewSheet({ r, onClose }: { r: Review | null; onClose: () => void }) 
     ['درآمد', shortMoney(s.income)],
     ['خرج', shortMoney(s.expense)],
     ['روزهایی که پلنر شب قبل پر شد', `${num(s.plannedDays)} از ${num(s.days)}`],
+    ['یادگیری', s.learnSessions ? `${num(s.learnSessions)} جلسه · ${num(s.learnMinutes)} دقیقه` : '—'],
   ]
   return (
     <Sheet

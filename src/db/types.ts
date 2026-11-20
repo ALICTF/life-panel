@@ -62,6 +62,8 @@ export interface Task {
   subtasks: SubTask[]
   goalId?: number
   recurId?: number
+  learnId?: number
+  star?: boolean // «باید» روز
   status: 'todo' | 'done' | 'dropped'
   doneAt?: number
   createdAt: number
@@ -274,4 +276,56 @@ export interface FocusSession {
   planned: number // دقیقه
   actual: number // دقیقه
   completed: boolean
+  learnId?: number
+}
+
+export type LearnKind = 'language' | 'skill' | 'book'
+
+export interface LearnItem {
+  id?: number
+  kind: LearnKind
+  title: string
+  why?: string
+  goalId?: number
+  source?: { type: string; name?: string; url?: string }
+  author?: string
+  level?: string
+  targetLevel?: string
+  total?: number // صفحه یا درس
+  current?: number
+  startValue?: number // مقدار در روز شروع، برای محاسبهٔ عقب‌افتادگی
+  schedule?: { days: number[]; time?: string; minutes: number }
+  minDaily?: number // حداقل روزانه: صفحه برای کتاب، دقیقه برای بقیه
+  deadline?: string
+  startDate: string
+  status: 'active' | 'paused' | 'done'
+  pledge?: string
+  bundle?: string
+  recurId?: number
+  project?: SubTask[]
+  order: number
+  createdAt: number
+  updatedAt: number
+}
+
+export interface LearnLog {
+  id?: number
+  itemId: number
+  date: string
+  minutes?: number
+  amount?: number // صفحه یا درس پیشرفت‌کرده
+  toValue?: number // صفحه/درس بعد از این جلسه
+  skills?: string[]
+  note?: string
+  at: number
+}
+
+export interface Word {
+  id?: number
+  itemId: number
+  word: string
+  meaning: string
+  reviews: number
+  known?: boolean
+  createdAt: number
 }

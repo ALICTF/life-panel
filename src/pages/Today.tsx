@@ -18,11 +18,12 @@ import { HealthQuick, CheckIn } from './health-shared'
 import { HabitRow } from './Habits'
 import { TaskSheet } from './TaskSheet'
 import { TaskRow, sortTasks, useTaskCats } from './task-ui'
-import { PlanList } from './Planner'
+import { PlanList, toggleStar } from './Planner'
 import { TxSheet, blankTx } from './TxSheet'
 import { GoalCard, useGoalCtx } from './Goals'
 import { periodOf } from './Reviews'
 import { QuickBar } from './QuickLog'
+import { TodayLearn } from './Learn'
 
 export default function Today() {
   const today = todayKey()
@@ -54,7 +55,7 @@ export default function Today() {
   const weekGoals = ctx.goals.filter((g) => g.status === 'active' && (g.level === 'week' || g.level === 'month')).slice(0, 4)
   const ref = useStagger<HTMLDivElement>([])
 
-  const sorted = [...tasks].filter((t) => t.status !== 'dropped').sort(sortTasks)
+  const sorted = [...tasks].filter((t) => t.status !== 'dropped' && !t.learnId).sort(sortTasks)
   const doneCount = sorted.filter((t) => t.status === 'done').length
   const habitDone = habits.filter((h) => habitStats(h, logs).todayDone === (h.type === 'good')).length
   const hol = holidayOf(today)
@@ -62,7 +63,9 @@ export default function Today() {
   const needBackup = (lastBackup || seeded || 0) < Date.now() - 7 * 864e5
   const showPlanTomorrow = hour >= 18 && !tomorrowPlan?.plannedAt
   const isFriday = weekIndex(today) === 6
-  const hasPlan = (plan?.musts.length || 0) + (plan?.mustNots.length || 0) > 0
+  const starred = sorted.filter((t) => t.star)
+  const mustTotal = starred.length + (plan?.musts.length || 0)
+  const mustDone = starred.filter((t) => t.status === 'done').length + (plan?.musts.filter((m) => m.done).length || 0)
   const goodHabits = habits.filter((h) => h.type === 'good')
   const badHabits = habits.filter((h) => h.type === 'bad')
 
@@ -79,7 +82,7 @@ export default function Today() {
         <div className="card flex items-center justify-around p-4">
           <SummaryRing label="تسک‌ها" value={sorted.length ? doneCount / sorted.length : 0} text={`${fa(doneCount)}/${fa(sorted.length)}`} />
           <SummaryRing label="عادت‌ها" value={habits.length ? habitDone / habits.length : 0} text={`${fa(habitDone)}/${fa(habits.length)}`} color="var(--good)" />
-          <SummaryRing label="بایدها" value={plan?.musts.length ? plan.musts.filter((m) => m.done).length / plan.musts.length : 0} text={plan?.musts.length ? `${fa(plan.musts.filter((m) => m.done).length)}/${fa(plan.musts.length)}` : '—'} color="var(--warn)" />
+          <SummaryRing label="بایدها" value={mustTotal ? mustDone / mustTotal : 0} text={mustTotal ? `${fa(mustDone)}/${fa(mustTotal)}` : '—'} color="var(--warn)" />
         </div>
 
         {/* ثبت سریع */}
@@ -172,7 +175,7 @@ export default function Today() {
         })}
 
         {showPlanTomorrow && (
-          <Reminder icon={<ClipboardList size={18} />} text="پلنر فردا را هنوز پر نکرده‌ای." action="پر کردن" onClick={() => nav('/planner')} />
+          <Reminder icon={<ClipboardList size={18} />} text="پلنر فردا را هنوز پر نکرده‌ای." action="پر کردن" onClick={() => nav('/planner?review=1')} />
         )}
         {isFriday && !weekReview && (
           <Reminder icon={<NotebookPen size={18} />} text={`مرور ${periodOf('week').label} آماده است.`} action="شروع" onClick={() => nav('/reviews')} />
@@ -236,19 +239,24 @@ export default function Today() {
           ) : (
             <div className="-mt-1 divide-y divide-line">
               {sorted.map((t) => (
-                <TaskRow key={t.id} t={t} cats={cats} onOpen={setTask} />
+                <TaskRow key={t.id} t={t} cats={cats} onOpen={setTask} onStar={toggleStar} />
               ))}
             </div>
           )}
         </Card>
 
-        {/* بایدها و نبایدها */}
-        <Card title="بایدها و نبایدهای امروز" action={<MoreLink to="/planner" />}>
-          {!hasPlan && <p className="mb-2 text-xs text-muted">بهتر است شب قبل در پلنر نوشته شوند؛ اما الان هم می‌توانی اضافه کنی.</p>}
-          <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold"><Target size={15} className="text-good" /> بایدها</p>
-          <PlanList date={today} field="musts" plan={plan} placeholder="مهم‌ترین کار امروز" tone="good" max={3} />
-          <p className="mt-4 mb-1 flex items-center gap-1.5 text-sm font-semibold"><ShieldOff size={15} className="text-bad" /> نبایدها</p>
-          <PlanList date={today} field="mustNots" plan={plan} placeholder="کاری که امروز نباید بکنم" tone="bad" />
+        <TodayLearn />
+
+        {/* نبایدها (بایدها همان تسک‌های ستاره‌دار بالا هستند) */}
+        <Card title="نبایدهای امروز" action={<MoreLink to="/planner" />}>
+          {(plan?.musts.length || 0) > 0 && (
+            <>
+              <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold"><Target size={15} className="text-good" /> بایدهای قبلی</p>
+              <PlanList date={today} field="musts" plan={plan} />
+              <div className="h-3" />
+            </>
+          )}
+          <PlanList date={today} field="mustNots" plan={plan} placeholder="کاری که امروز نباید بکنم" />
         </Card>
 
         {/* مالی */}

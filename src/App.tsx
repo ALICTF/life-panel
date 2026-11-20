@@ -18,6 +18,7 @@ const Notes = lazy(() => import('./pages/Notes'))
 const NoteEditor = lazy(() => import('./pages/NoteEditor'))
 const Planner = lazy(() => import('./pages/Planner'))
 const Settings = lazy(() => import('./pages/Settings'))
+const Learn = lazy(() => import('./pages/Learn'))
 
 const TABS = [
   { to: '/', label: 'امروز', icon: Home },
@@ -31,7 +32,7 @@ function TabBar() {
   const loc = useLocation()
   const hide = loc.pathname.startsWith('/notes/')
   if (hide) return null
-  const moreActive = ['/more', '/health', '/goals', '/reviews', '/notes', '/settings'].some((p) => loc.pathname.startsWith(p))
+  const moreActive = ['/more', '/health', '/goals', '/reviews', '/notes', '/settings', '/learn'].some((p) => loc.pathname.startsWith(p))
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/90 backdrop-blur-lg safe-bottom">
       <div className="mx-auto flex max-w-xl">
@@ -91,6 +92,7 @@ export default function App() {
               <Route path="/notes" element={<Notes />} />
               <Route path="/notes/:id" element={<NoteEditor />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/learn" element={<Learn />} />
             </Routes>
           </Suspense>
         )}

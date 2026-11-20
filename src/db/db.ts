@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type {
-  Account, Budget, Category, DayPlan, Debt, FocusSession, Goal, Habit, HabitLog, HealthEntry,
+  Account, Budget, Category, DayPlan, Debt, FocusSession, Goal, Habit, HabitLog, HealthEntry, LearnItem, LearnLog, Word,
   LogEvent, Meal, Med, MedLog, Note, Recurring, Review, Setting, Task, Transaction, Workout,
 } from './types'
 
@@ -26,6 +26,9 @@ export class PanelDB extends Dexie {
   medLogs!: Table<MedLog, number>
   workouts!: Table<Workout, number>
   focus!: Table<FocusSession, number>
+  learn!: Table<LearnItem, number>
+  learnLogs!: Table<LearnLog, number>
+  words!: Table<Word, number>
 
   constructor() {
     super('panel')
@@ -64,6 +67,12 @@ export class PanelDB extends Dexie {
       workouts: '++id, date',
       focus: '++id, date, taskId',
     })
+    // نسخهٔ ۴: یادگیری (زبان، مهارت، کتاب)
+    this.version(4).stores({
+      learn: '++id, kind, status',
+      learnLogs: '++id, itemId, date',
+      words: '++id, itemId',
+    })
   }
 }
 
@@ -72,7 +81,7 @@ export const db = new PanelDB()
 export const TABLES = [
   'health', 'habits', 'habitLogs', 'tasks', 'dayPlans', 'goals', 'reviews', 'accounts',
   'transactions', 'recurring', 'categories', 'budgets', 'debts', 'notes', 'events', 'settings',
-  'meals', 'meds', 'medLogs', 'workouts', 'focus',
+  'meals', 'meds', 'medLogs', 'workouts', 'focus', 'learn', 'learnLogs', 'words',
 ] as const
 
 export async function getSetting<T>(key: string, fallback: T): Promise<T> {
